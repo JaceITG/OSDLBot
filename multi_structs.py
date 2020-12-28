@@ -19,7 +19,7 @@ class Game():
         #init player scores dict {osu_user: score}
         self.player_scores = {}
         for teamscore in game_api.scores:
-            self.player_scores[resolve_user(teamscore.user_id)] = teamscore.score
+            self.player_scores[resolve_username(teamscore.user_id)] = teamscore.score
 
         #Store data about which mods players used
 
@@ -45,5 +45,41 @@ class Match():
                 return False
         return True
 
-def resolve_user(id):
+class Player():
+    def __init__(self, user_id, discord=0):
+        self.obj = api.get_user(user_id)[0]
+
+        self.discord_id = discord
+        self.username = self.obj.username
+        self.elo = 0
+        
+        #Osu info
+        self.id = self.obj.user_id
+        self.rank = self.obj.pp_rank
+        self.rank_c = self.obj.pp_country_rank
+        self.acc = round(self.obj.accuracy,2)
+        self.pp = self.obj.pp_raw
+        self.plays = self.obj.playcount
+        self.country = self.obj.country
+
+
+    def get_elo(self):
+        return self.elo
+    
+    def set_elo(self, new_elo):
+        self.elo = new_elo
+    
+    def add_elo(self, elo_delta):
+        self.elo += elo_delta
+        return self.elo
+    
+    def update(self):
+        self.obj = api.get_user(self.id)[0]
+        self.rank = self.obj.pp_rank
+        self.rank_c = self.obj.pp_country_rank
+        self.acc = round(self.obj.accuracy,2)
+        self.pp = self.obj.pp_raw
+        self.plays = self.obj.playcount
+
+def resolve_username(id):
     return api.get_user(id)[0].username

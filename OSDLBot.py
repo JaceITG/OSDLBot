@@ -3,6 +3,8 @@ from aioconsole import ainput
 import OSDLBot_storage
 from datetime import datetime
 from log_oop import log
+from mm_utils import *
+from multi_structs import *
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -58,6 +60,38 @@ async def prefixed(message):
 
     if cmd == "help":
         await sendEmbed(OSDLBot_storage.HELP_EMBED, channel)
+    
+    if args[0] == "link":
+        #Check if second arg passed
+        if len(args)<2:
+            await sendEmbed(discord.Embed(description="Please provide an osu! username or ID to link with your account"), channel)
+            return
+        #Get string of the osu username or ID
+        osu_user = ' '.join(args[1:])
+
+        try:
+            #get user
+            player_obj = await link_account(osu_user,author.id)
+        except UserNotFoundError:
+            await sendEmbed(discord.Embed(description=f"User {osu_user} could not be found on osu!"), channel)
+            return
+        except AlreadyLinkedError:
+            await sendEmbed(discord.Embed(description=f"You already have an osu! account linked! Contact Scheisse if you believe this is an error."), channel)
+            return
+
+        await sendEmbed(discord.Embed(description=f"Discord user {author.name} linked to {player_obj.username}"), channel)
+
+    if args[0] == "osu":
+        if len(message.mentions)>0:
+            #Get the linked account of user mentioned in command
+            fetching = message.mentions[0]
+        else:
+            #Get author's lined account
+            fetching = author
+        emb = await get_linked_embed(fetching.id, fetching.avatar_url)
+        await sendEmbed(emb, channel)
+
+    
 
 
 #Implicit commands
@@ -85,6 +119,9 @@ async def adminCmd(message):
         return
     cmd = text[1:].split(" ")
 
+    if cmd[0] == "addelo":
+        await add_elo_by_discord(int(cmd[1]),int(cmd[2]))
+
     if cmd[0] == "logmatches":
         match_chan = guild.get_channel(OSDLBot_storage.MATCH_RESULT_CHAN)
         start_time = match_chan.created_at
@@ -98,7 +135,7 @@ async def adminCmd(message):
             #Fix truncated year value
             if date[2]<1000:
                 date[2] += 2000
-            start_time = datetime(date[2], date[0], date[1])
+            start_time = datetime.datetime(date[2], date[0], date[1])
         multi_url_format = "https://osu.ppy.sh/community/matches/"
         matches = []
         async for result in match_chan.history(after=start_time, limit=None):
@@ -112,7 +149,7 @@ async def adminCmd(message):
             if match_id not in matches:
                 matches.append(match_id)
 
-        log_file = await log(matches, datetime.now())
+        log_file = await log(matches, datetime.datetime.now())
         await sendFile(log_file, channel)
 
 
