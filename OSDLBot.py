@@ -2,7 +2,7 @@ import discord, random
 from aioconsole import ainput
 import OSDLBot_storage
 from datetime import datetime
-from log_oop import log
+from log_matches import log
 from mm_utils import *
 from multi_structs import *
 
