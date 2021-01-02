@@ -56,16 +56,21 @@ class Match():
         except:
             raise MatchNotFoundError()
         self.round_list = [Game(g) for g in self.json.games]
+        self.players = []#li of player ids who participated
         self.winner = None
+        #FIXME: get match start time
+        #self.time_played = self.json.start_time
 
     #Get dict of osu_id:num_wins for this match
-    def get_round_wins(self):
+    def calc_round_wins(self):
         wins = {}
         for round in self.round_list:
             winner = round.get_winner().id
 
             #Make an entry in wins dict for every player who appears in Match
             for p in round.get_players():
+                if p.id not in self.players:
+                    self.players.append(p.id)
                 wins.setdefault(p.id,0)
             wins[winner]+=1
         return wins
@@ -89,7 +94,7 @@ class Match():
                 return False
         
         #check win margin
-        wins = self.get_round_wins()
+        wins = self.calc_round_wins()
         needed_for_win = (pool['BO']//2)+1
         highest = 0
         lowest = needed_for_win
@@ -143,15 +148,25 @@ class Player():
         else:
             raise PlayerNotFound()
 
+    def write(self):
+        with shelve.open("userdb") as db:
+            #find correct link
+            for link in db.items():
+                if link[1].id == self.id:
+                    #overwrite link
+                    db[link[0]] = self
+                    break
 
     def get_elo(self):
         return self.elo
     
     def set_elo(self, new_elo):
         self.elo = new_elo
+        self.write()
     
     def add_elo(self, elo_delta):
         self.elo += elo_delta
+        self.write()
         return self.elo
     
     def update(self):
@@ -165,6 +180,7 @@ class Player():
         self.pp = self.obj.pp_raw
         self.plays = self.obj.playcount
         self.country = self.obj.country
+        self.write()
 
 def resolve_username(id):
     return api.get_user(id)[0].username

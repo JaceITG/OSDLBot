@@ -132,6 +132,9 @@ async def adminCmd(message):
 
     if cmd[0] == "addelo":
         await add_elo_by_discord(int(cmd[1]),int(cmd[2]))
+    
+    if cmd[0] == "setelo":
+        await set_elo_by_discord(int(cmd[1]),int(cmd[2]))
 
     if cmd[0] == "revert":
         linking = int(cmd[1])
