@@ -1,9 +1,12 @@
 from osuapi import OsuApi, ReqConnector, enums
-import aiohttp, asyncio, sys, os, datetime, pprint
+import aiohttp, asyncio, sys, os, datetime, pprint, shelve
 import OSDLBot_storage
 api = OsuApi(OSDLBot_storage.OSU_API_KEY, connector=ReqConnector())
 
 class MatchNotFoundError(Exception):
+    pass
+
+class PlayerNotFound(Exception):
     pass
 
 class Map():
@@ -16,12 +19,30 @@ class Game():
         self.is_v2 = game_api.scoring_type == enums.ScoringType.score_v2
         self.map = Map(game_api.beatmap_id)
 
-        #init player scores dict {osu_user: score}
+        #init player scores dict {Player: score}
         self.player_scores = {}
+        self.players = []
         for teamscore in game_api.scores:
-            self.player_scores[resolve_username(teamscore.user_id)] = teamscore.score
+            #FIXME: adjust mod multipliers??
+            p = find_osu_player(teamscore.user_id)
+            if p is None:
+                raise PlayerNotFound()
+            self.players.append(p)
+            self.player_scores[p] = teamscore.score
 
         #Store data about which mods players used
+
+    #Get the players in this round
+    def get_players(self):
+        return self.players
+
+    #Get the Player that won this round/map
+    def get_winner(self):
+        winnerps = None
+        for ps in self.player_scores.items():
+            if winnerps is None or ps[1]>winnerps[1]:
+                winnerps = ps
+        return winnerps[0]
 
     #check map played is in pool dictionary
     def in_pool(self, pool):
@@ -35,32 +56,92 @@ class Match():
         except:
             raise MatchNotFoundError()
         self.round_list = [Game(g) for g in self.json.games]
+        self.winner = None
 
-    def valid_tourney(self, pool, warmups=2, scorev2=True):
+    #Get dict of osu_id:num_wins for this match
+    def get_round_wins(self):
+        wins = {}
+        for round in self.round_list:
+            winner = round.get_winner().id
+
+            #Make an entry in wins dict for every player who appears in Match
+            for p in round.get_players():
+                wins.setdefault(p.id,0)
+            wins[winner]+=1
+        return wins
+
+    #Omit all maps which don't appear in the pool list from round_list
+    def strip_nonpool(self, pool):
+        new_list = self.round_list
+        for r in new_list:
+            if not r.in_pool(pool):
+                new_list.remove(r)
+        self.round_list = new_list
+
+    #Check whether all maps played are in the pool (opt: skip x warmups)
+    #FIXME: ensure num rounds correct for Best Of N
+    def valid_tourney(self, pool, warmups=0, scorev2=True):
         remove_warmups = self.round_list[warmups:]
         #Check all maps in pool
         for game in remove_warmups:
             #Invalid if map not in pool or game doesn't match scorev2 req
             if not game.in_pool(pool) or game.is_v2 != scorev2:
                 return False
+        
+        #check win margin
+        wins = self.get_round_wins()
+        needed_for_win = (pool['BO']//2)+1
+        highest = 0
+        lowest = needed_for_win
+        #Get higher and lower score
+        for wincount in wins.values():
+            if wincount>highest:
+                highest=wincount
+            if wincount<lowest:
+                lowest=wincount
+        if highest!=needed_for_win:
+            return False
+
+        #Check last is TB
+        if wincount-1==lowest:
+            #Last should have been a TB
+            if remove_warmups[len(remove_warmups)-1].map.id != pool['tb']:
+                return False
         return True
 
-class Player():
-    def __init__(self, user_id, discord=0):
-        self.obj = api.get_user(user_id)[0]
+#Return the Player object stored in the dictionary with the given ID, or None if not found
+def find_osu_player(osu_user_id):
+    with shelve.open("userdb") as db:
+        #Create a list of player objs stored in the dict
+        players = [db[id] for id in db.keys()]
+    
+    for player in players:
+        if osu_user_id == player.id:
+            return player
+    return None
 
-        self.discord_id = discord
-        self.username = self.obj.username
-        self.elo = 0
-        
-        #Osu info
-        self.id = self.obj.user_id
-        self.rank = self.obj.pp_rank
-        self.rank_c = self.obj.pp_country_rank
-        self.acc = round(self.obj.accuracy,2)
-        self.pp = self.obj.pp_raw
-        self.plays = self.obj.playcount
-        self.country = self.obj.country
+class Player():
+    def __init__(self, user_id, discord=0, new=False):
+        in_database = find_osu_player(user_id)
+        if in_database and not new:
+            self = in_database
+        elif new:
+            self.obj = api.get_user(user_id)[0]
+
+            self.discord_id = discord
+            self.username = self.obj.username
+            self.elo = 0
+            
+            #Osu info
+            self.id = self.obj.user_id
+            self.rank = self.obj.pp_rank
+            self.rank_c = self.obj.pp_country_rank
+            self.acc = round(self.obj.accuracy,2)
+            self.pp = self.obj.pp_raw
+            self.plays = self.obj.playcount
+            self.country = self.obj.country
+        else:
+            raise PlayerNotFound()
 
 
     def get_elo(self):
@@ -75,11 +156,16 @@ class Player():
     
     def update(self):
         self.obj = api.get_user(self.id)[0]
+        self.username = self.obj.username
+        #Osu info
+        self.id = self.obj.user_id
         self.rank = self.obj.pp_rank
         self.rank_c = self.obj.pp_country_rank
         self.acc = round(self.obj.accuracy,2)
         self.pp = self.obj.pp_raw
         self.plays = self.obj.playcount
+        self.country = self.obj.country
 
 def resolve_username(id):
     return api.get_user(id)[0].username
+

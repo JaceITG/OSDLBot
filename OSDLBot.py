@@ -52,7 +52,6 @@ async def prefixed(message):
     cmd = message.content[len(OSDLBot_storage.PREFIX):]
     args = cmd.split(' ')
     lower = cmd.lower()
-    argsLower = lower.split(' ')
     author = message.author
     channel = message.channel
     guild = message.guild
@@ -91,6 +90,18 @@ async def prefixed(message):
         emb = await get_linked_embed(fetching.id, fetching.avatar_url)
         await sendEmbed(emb, channel)
 
+    if args[0] == "match":
+        #Check for multi link passed as second arg
+        if len(args)<2 or not args[1].startswith(OSDLBot_storage.multi_url_format):
+            await sendEmbed(discord.Embed(description=f"Please provide a link to the match played (should start with {OSDLBot_storage.multi_url_format}"),channel)
+            return
+        
+        #Process linked match
+        response = await process_match(int(args[1][len(OSDLBot_storage.multi_url_format):]))
+        await sendEmbed(response,channel)
+
+
+        
     
 
 
@@ -122,6 +133,13 @@ async def adminCmd(message):
     if cmd[0] == "addelo":
         await add_elo_by_discord(int(cmd[1]),int(cmd[2]))
 
+    if cmd[0] == "revert":
+        linking = int(cmd[1])
+        osu_id = int(cmd[2])
+        player_obj = await reset_link(linking, osu_id)
+        await sendEmbed(discord.Embed(description=f"Account {player_obj.username} reverted."), channel)
+
+
     if cmd[0] == "logmatches":
         match_chan = guild.get_channel(OSDLBot_storage.MATCH_RESULT_CHAN)
         start_time = match_chan.created_at
@@ -136,16 +154,16 @@ async def adminCmd(message):
             if date[2]<1000:
                 date[2] += 2000
             start_time = datetime.datetime(date[2], date[0], date[1])
-        multi_url_format = "https://osu.ppy.sh/community/matches/"
+
         matches = []
         async for result in match_chan.history(after=start_time, limit=None):
             tokenized = result.content.translate({ord(i): None for i in '<>'}).split()
             try:
-                ind_link = [tokenized.index(l) for l in tokenized if l.startswith(multi_url_format)][0]
+                ind_link = [tokenized.index(l) for l in tokenized if l.startswith(OSDLBot_storage.multi_url_format)][0]
             except:
                 #url format not in message
                 continue
-            match_id = int(tokenized[ind_link][len(multi_url_format):])
+            match_id = int(tokenized[ind_link][len(OSDLBot_storage.multi_url_format):])
             if match_id not in matches:
                 matches.append(match_id)
 

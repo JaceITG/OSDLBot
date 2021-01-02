@@ -1,7 +1,7 @@
 from osuapi import OsuApi, ReqConnector, enums
 import aiohttp, asyncio, sys, os, datetime, pprint, discord, shelve
 import OSDLBot_storage
-from multi_structs import Map, Game, Match, MatchNotFoundError, Player
+from multi_structs import Map, Game, Match, MatchNotFoundError, Player, PlayerNotFound
 api = OsuApi(OSDLBot_storage.OSU_API_KEY, connector=ReqConnector())
 
 class UserNotFoundError(Exception):
@@ -9,6 +9,7 @@ class UserNotFoundError(Exception):
 
 class AlreadyLinkedError(Exception):
     pass
+
 
 async def add_elo_by_discord(discord_id, elo_delta):
     with shelve.open("userdb") as db:
@@ -49,7 +50,7 @@ async def link_account(osu_user,discord_id):
         player = in_storage
     else:
         #Create a new Player obj for this id
-        player = Player(user.user_id,discord_id)
+        player = Player(user.user_id,discord_id, new=True)
 
     #Store object in a db dict of discord_id:Player
     with shelve.open("userdb") as db:
@@ -87,3 +88,38 @@ async def get_linked_embed(discord_id, pfp_url=""):
     if len(pfp_url)>0:
         player_embed.set_thumbnail(url=pfp_url)
     return player_embed
+
+async def reset_link(discord_id, osu_user_id):
+    with shelve.open("userdb") as db:
+        if str(discord_id) in db.keys():
+            del db[str(discord_id)]
+    
+    plr = await link_account(osu_user_id,discord_id)
+    return plr
+
+#Process a 1v1 league match from an int id
+#Recalculate ELOs of both players involved in the match
+#Send an embed containing match information to the #match-results channel
+async def process_match(id):
+    try:
+        match = Match(id)
+        pool = OSDLBot_storage.CURRENT_POOL
+        match.strip_nonpool(pool)
+        #Gets dict of osu_id:numwins for this match
+        player_wins = match.get_round_wins()
+    except PlayerNotFound:
+        return discord.Embed(description="Error, could not find linked account for all players in match. Both players must be in server with linked accounts using `%link [username]`")
+    
+    #Embed creation
+    emb = discord.Embed(title=f"Match ID {id}",description="**Results:**")
+    emb.set_image(url=OSDLBot_storage.LOGO_URL)
+    for wincount in player_wins.items():
+        try:
+            ply = await find_osu_player(wincount[0])
+            emb.add_field(name=f"{ply.username}",value=f"Points: {wincount[1]}",inline=False)
+        except:
+            print("error on this player")
+            emb.add_field(name="Error on one of the players",value="wtf :(",inline=False)
+    
+    return emb
+    
