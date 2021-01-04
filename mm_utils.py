@@ -84,7 +84,7 @@ async def get_linked_embed(discord_id, pfp_url=""):
 
     player_desc = f"▸ Rank: #{player.rank} ({player.country}#{player.rank_c})\n"
     player_desc+= f"▸ Accuracy: {player.acc}%\n"
-    player_desc+= f"▸ ELO: {player.elo}\n"
+    player_desc+= f"▸ ELO: {round(player.elo)}\n"
     player_desc+= f"▸ Playcount: {player.plays}"
 
     player_embed = discord.Embed(title=f"User profile for {player.username}",url=f"https://osu.ppy.sh/users/{player.id}",description=player_desc)
@@ -103,7 +103,7 @@ async def reset_link(discord_id, osu_user_id):
     return plr
 
 async def elo_formula(win_ratio, old_elo, op_old_elo):
-    return (OSDLBot_storage.ELO_WEIGHT * ((.5 * ((6 * win_ratio)-3) / math.sqrt(((6 * win_ratio)-3)**2 + 1) + .5) - (10**(old_elo/400.0)/ (10**(op_old_elo/400.0) + 10**(old_elo/400.0)))))
+    return (OSDLBot_storage.ELO_WEIGHT * ((.5 * ((6 * win_ratio)-OSDLBot_storage.C_VALUE) / math.sqrt(((6 * win_ratio)-OSDLBot_storage.C_VALUE)**2 + 1) + .5) - (10**(old_elo/400.0)/ (10**(op_old_elo/400.0) + 10**(old_elo/400.0)))))
 
 #Process a 1v1 league match from an int id
 #Recalculate ELOs of both players involved in the match
@@ -159,7 +159,7 @@ async def process_match(id):
                 change_str = str(change)
             else:
                 change_str = f"+{change}"
-            emb.add_field(name=f"{player.username} ({change_str})",value=f"Points: {player_wins[player.id]}",inline=False)
+            emb.add_field(name=f"{player.username} ({round(change_str)})",value=f"Points: {player_wins[player.id]}",inline=False)
         except:
             emb.add_field(name="Error on one of the players",value="wtf :(",inline=False)
     
