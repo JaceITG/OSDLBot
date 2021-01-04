@@ -1,5 +1,8 @@
 from osuapi import OsuApi, ReqConnector, enums
 import aiohttp, asyncio, sys, os, datetime, pprint, discord, shelve, math
+#Graphing
+import numpy as np
+import matplotlib.pyplot as plt
 import OSDLBot_storage
 from multi_structs import Map, Game, Match, MatchNotFoundError, Player, PlayerNotFound
 api = OsuApi(OSDLBot_storage.OSU_API_KEY, connector=ReqConnector())
@@ -103,7 +106,8 @@ async def reset_link(discord_id, osu_user_id):
     return plr
 
 async def elo_formula(win_ratio, old_elo, op_old_elo):
-    return (OSDLBot_storage.ELO_WEIGHT * ((.5 * ((6 * win_ratio)-OSDLBot_storage.C_VALUE) / math.sqrt(((6 * win_ratio)-OSDLBot_storage.C_VALUE)**2 + 1) + .5) - (10**(old_elo/400.0)/ (10**(op_old_elo/400.0) + 10**(old_elo/400.0)))))
+    c = OSDLBot_storage.C_VALUE
+    return (OSDLBot_storage.ELO_WEIGHT * ((.5 * (((c*2) * win_ratio)-c) / math.sqrt((((2*c) * win_ratio)-c)**2 + 1) + .5) - (10**(old_elo/400.0)/ (10**(op_old_elo/400.0) + 10**(old_elo/400.0)))))
 
 #Process a 1v1 league match from an int id
 #Recalculate ELOs of both players involved in the match
@@ -164,4 +168,28 @@ async def process_match(id):
             emb.add_field(name="Error on one of the players",value="wtf :(",inline=False)
     
     return emb
+
+async def elo_graph(elo1=1000,elo2=1000):
+    #x interval
+    range = np.arange(0,1.1,0.1)
+    vect = np.vectorize(OSDLBot_storage.ELO_FUNCTION)
+    y = vect(range,elo1,elo2)
+    fig,ax = plt.subplots()
+    ax.plot(range,y)
+    #Make axes thick
+    ax.axhline(linewidth=1.5, color="k")
+    ax.axvline(linewidth=1.5, color="k")
+    #Annotation
+    maxi = vect(1,elo1,elo2)
+    mini = vect(0,elo1,elo2)
+    ax.annotate(f"100% won (+{maxi.round(1)})", xy=(1, maxi), xytext=(0.7, maxi-10), arrowprops=dict(facecolor='black', shrink=0.05))
+    ax.annotate(f"0% won ({mini.round(1)})", xy=(0,mini), xytext=(0.05, mini+10), arrowprops=dict(facecolor='black', shrink=0.05))
     
+    plt.xlim(0,1)
+    ax.set(xlabel="Percentage maps won",ylabel="Delta ELO",title=f"OSDL ELO Graph (Old ELO: {elo1}, Opponent ELO: {elo2})")
+    ax.grid()
+    fn = f"{OSDLBot_storage.DATA_DIR}\\elo.png"
+    fig.savefig(fn)
+    plt.close()
+    return fn
+

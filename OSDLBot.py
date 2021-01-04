@@ -1,4 +1,5 @@
 import discord, random
+from dill.source import getsource
 from aioconsole import ainput
 import OSDLBot_storage
 from datetime import datetime
@@ -24,6 +25,10 @@ async def on_ready():
 @client.event
 async def on_message(message):
     if message.author == client.user or message.content == None:
+        return
+    
+    #LOCK BOT
+    if not message.author.id in OSDLBot_storage.ADMIN_ID:
         return
 
     if message.guild == None:
@@ -172,6 +177,13 @@ async def adminCmd(message):
 
         log_file = await log(matches, datetime.datetime.now())
         await sendFile(log_file, channel)
+    
+    if cmd[0]=='elo':
+        if len(cmd)==3:
+            elo_g = await elo_graph(elo1=int(cmd[1]), elo2=int(cmd[2]))
+        else:
+            elo_g = await elo_graph()
+        await sendFile(elo_g,channel,cntnt=f"***Current ELO graph***\n`Weight = {OSDLBot_storage.ELO_WEIGHT}\nc = {OSDLBot_storage.C_VALUE}`")
 
 
     if cmd[0]=='dm':
