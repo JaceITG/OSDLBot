@@ -102,12 +102,21 @@ async def prefixed(message):
             return
         
         #Process linked match
-        response = await process_match(int(args[1][len(OSDLBot_storage.multi_url_format):]))
+        try:
+            response = await process_match(int(args[1][len(OSDLBot_storage.multi_url_format):]))
+        except AlreadyCalcError:
+            await sendEmbed(discord.Embed(description=f"This match has already been processed! Contact Scheisse if you believe this is an error."), channel)
         await sendEmbed(response,channel)
-
-
-        
     
+    if args[0] == "leaderboard" or args[0] == "lb":
+        if len(args)>1 and args[1].isdigit():
+            #Page was passed
+            lb = await leaderboard(author.id,page=int(args[1]))
+        else:
+            #Get first page
+            lb = await leaderboard(author.id)
+        await sendEmbed(lb,channel)
+
 
 
 #Implicit commands

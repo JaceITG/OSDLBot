@@ -13,6 +13,9 @@ class UserNotFoundError(Exception):
 class AlreadyLinkedError(Exception):
     pass
 
+class AlreadyCalcError(Exception):
+    pass
+
 
 async def add_elo_by_discord(discord_id, elo_delta):
     with shelve.open("userdb") as db:
@@ -25,6 +28,64 @@ async def set_elo_by_discord(discord_id, elo):
         player = await get_linked(discord_id)
         player.set_elo(elo)
         db[str(discord_id)] = player
+
+#Generate a leaderboard embed using the OSDL ELO rankings
+async def leaderboard(author_id, page=1, length=10):
+    with shelve.open("userdb") as db:
+        #Create a list of player objs stored in the dict
+        players = [db[id] for id in db.keys()]
+    
+    #Sort by elo
+    players.sort(key=lambda p: p.elo, reverse=True)
+
+    if len(players)%length == 0:
+        #edge cases (i.e. numplayers 20 length 10, we need 2 pages not 3)
+        #this is probably bad way to handle it and im failing at easy math lol
+        max_page = (len(players)//(length))
+    else:
+        max_page = (len(players)//(length)) +1
+
+    if page>max_page:
+        #Cap page request at final page
+        page = max_page
+
+    author_model = await get_linked(author_id)
+
+    #Make description text
+    desc = f"Rank     Name (Osu) [Page {page}/{max_page}]\n"
+    #Find index range for requested page
+    start = (page-1)*length
+    end = min(start+length,len(players))
+    for p in range(start,end):
+        #Add listing to desc for each player
+        ply = players[p]
+        ply.update()
+        desc+= f"{p+1:<4}➤   # {ply.username:<15} ELO: {round(ply.elo)}\n"
+    desc+="____________________________________\n"
+    
+    #If author is a Player, show their rank in footer
+    if author_model:
+        desc+=f"Your Rank: {await get_rank(author_model.id,sorted=players):<15} ELO: {round(author_model.elo)}"
+
+    #Instatiate Embed
+    emb = discord.Embed(title="OSDL 1v1 Leaderboard",description=f"```{desc}```")
+    #Logo
+    emb.set_thumbnail(url=OSDLBot_storage.LOGO_URL)
+        
+    return emb
+    
+async def get_rank(osu_id, sorted=None):
+    if not sorted:
+        with shelve.open("userdb") as db:
+            #Create a list of player objs stored in the dict
+            players = [db[id] for id in db.keys()]
+        players.sort(key=lambda p: p.elo)
+    else:
+        players = sorted
+    for i in range(len(players)):
+        if players[i].id == osu_id:
+            return i+1
+    return None
 
 #Return the Player object stored in the dictionary with the given ID, or None if not found
 async def find_osu_player(osu_user_id):
@@ -112,7 +173,13 @@ async def elo_formula(win_ratio, old_elo, op_old_elo):
 #Process a 1v1 league match from an int id
 #Recalculate ELOs of both players involved in the match
 #Send an embed containing match information to the #match-results channel
-async def process_match(id):
+async def process_match(id,override=False):
+    #check if match has already been processed
+    if not override:
+        with open("Data\\calculated.txt","r") as f:
+            if str(id) in f.read().splitlines():
+                raise AlreadyCalcError()
+
     try:
         match = Match(id)
         pool = OSDLBot_storage.CURRENT_POOL
@@ -145,6 +212,11 @@ async def process_match(id):
     player_changes[p2] = delta2
     p2.add_elo(delta2)
 
+    #Log match as recorded
+    if not override:
+        with open("Data\\calculated.txt","a") as f:
+            f.write(str(id)+"\n")
+    
 
 
     
@@ -158,14 +230,14 @@ async def process_match(id):
     for player in player_changes.keys():
         try:
             #check + or - elo
-            change = player_changes[player]
+            change = round(player_changes[player])
             if change<0:
                 change_str = str(change)
             else:
                 change_str = f"+{change}"
-            emb.add_field(name=f"{player.username} ({round(change_str)})",value=f"Points: {player_wins[player.id]}",inline=False)
-        except:
-            emb.add_field(name="Error on one of the players",value="wtf :(",inline=False)
+            emb.add_field(name=f"{player.username} ({change_str})",value=f"Points: {player_wins[player.id]}",inline=False)
+        except Exception as e:
+            emb.add_field(name="Error on one of the players",value=e,inline=False)
     
     return emb
 
@@ -176,9 +248,11 @@ async def elo_graph(elo1=1000,elo2=1000):
     y = vect(range,elo1,elo2)
     fig,ax = plt.subplots()
     ax.plot(range,y)
+
     #Make axes thick
     ax.axhline(linewidth=1.5, color="k")
     ax.axvline(linewidth=1.5, color="k")
+
     #Annotation
     maxi = vect(1,elo1,elo2)
     mini = vect(0,elo1,elo2)
@@ -188,6 +262,7 @@ async def elo_graph(elo1=1000,elo2=1000):
     plt.xlim(0,1)
     ax.set(xlabel="Percentage maps won",ylabel="Delta ELO",title=f"OSDL ELO Graph (Old ELO: {elo1}, Opponent ELO: {elo2})")
     ax.grid()
+    #Save figure
     fn = f"{OSDLBot_storage.DATA_DIR}\\elo.png"
     fig.savefig(fn)
     plt.close()
