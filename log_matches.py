@@ -48,7 +48,7 @@ async def log(match_ids, date, pool="round12"):
 
         for player in players.items():
             scores = player[1]
-            userstr = f"{await resolve_user(player[0])}"
+            userstr = await resolve_user(player[0])
             for item in scores.items():
                 userstr+=","
                 userstr+=str(item[1])
