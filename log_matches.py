@@ -2,7 +2,7 @@ from osuapi import OsuApi, ReqConnector, enums
 import aiohttp, asyncio, sys, os, datetime, pprint, discord
 import OSDLBot_storage
 from multi_structs import Map, Game, Match, MatchNotFoundError
-api = OsuApi(OSDLBot_storage.OSU_API_KEY, connector=ReqConnector())
+api = OsuApi(os.environ.get('OSU_API_KEY'), connector=ReqConnector())
 
 #match_ids is list of integer multiplayer ids
 async def log(match_ids, date, pool="round12"):
