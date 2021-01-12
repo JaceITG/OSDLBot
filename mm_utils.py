@@ -132,9 +132,9 @@ async def get_linked(discord_id):
         if str(discord_id) not in db.keys():
             return None
         player = db[str(discord_id)]
-        #Update the Player object and restore in database
-        player.update()
-        db[str(discord_id)] = player
+    
+    #Update the Player object
+    player.update()
     return player
 
 #Returns an embed containing information about the Player linked to a discord id
