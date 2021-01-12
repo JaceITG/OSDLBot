@@ -13,20 +13,24 @@ class Map():
     def __init__(self, map_id):
         self.map = api.get_beatmaps(beatmap_id=map_id)[0]
         self.id = self.map.beatmap_id
+        self.title = self.map.title
 
 class Game():
     def __init__(self, game_api):
         self.is_v2 = game_api.scoring_type == enums.ScoringType.score_v2
         self.map = Map(game_api.beatmap_id)
+        self.mods = game_api.mods
 
         #init player scores dict {Player: score}
         self.player_scores = {}
         self.players = []
         for teamscore in game_api.scores:
             #FIXME: adjust mod multipliers??
+            
             p = find_osu_player(teamscore.user_id)
             if p is None:
                 raise PlayerNotFound()
+            ##print(f"Mods for {p.username}: {teamscore.enabled_mods}")
             self.players.append(p)
             self.player_scores[p] = teamscore.score
 
@@ -55,11 +59,16 @@ class Match():
             self.json = api.get_match(id)
         except:
             raise MatchNotFoundError()
+
+        #Match meta
+        self.match = self.json.match
+        self.title = self.match.name
+        self.time_played = self.match.start_time
+        
+        #Games
         self.round_list = [Game(g) for g in self.json.games]
         self.players = []#li of player ids who participated
         self.winner = None
-        #FIXME: get match start time
-        #self.time_played = self.json.start_time
 
     #Get dict of osu_id:num_wins for this match
     def calc_round_wins(self):

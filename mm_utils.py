@@ -222,9 +222,9 @@ async def process_match(id,override=False):
     
 
     #Embed creation
-    emb = discord.Embed(title=f"Match ID {id}",description="**Results:**")
+    emb = discord.Embed(title=f"{match.title}",description="**Results:**")
     emb.set_thumbnail(url=OSDLBot_storage.LOGO_URL)
-    #emb.set_footer(text=f"Played on {match.time_played}")
+    emb.set_footer(text=f"Played on {match.time_played}")
 
     #Create field for each player
     for player in player_changes.keys():
