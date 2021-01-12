@@ -1,1 +1,1 @@
-web: python OSDLBot.py
+worker: python OSDLBot.py
