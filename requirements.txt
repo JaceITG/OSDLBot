@@ -72,7 +72,6 @@ numpy==1.19.1
 oauthlib==3.1.0
 opt-einsum==3.2.0
 osuapi==0.0.42
-osustreams==1.0.0
 packaging==20.3
 pandocfilters==1.4.2
 parso==0.6.1
