@@ -1,8 +1,9 @@
 from osuapi import OsuApi, ReqConnector, enums
 import aiohttp, asyncio, sys, os, datetime, pprint, shelve
+from threading import Lock
 import OSDLBot_storage
 api = OsuApi(os.environ.get('OSU_API_KEY'), connector=ReqConnector())
-
+lock = Lock()
 class MatchNotFoundError(Exception):
     pass
 
@@ -158,6 +159,7 @@ class Player():
             raise PlayerNotFound()
 
     def write(self):
+        lock.acquire()
         with shelve.open("userdb") as db:
             #find correct link
             for link in db.items():
@@ -165,6 +167,7 @@ class Player():
                     #overwrite link
                     db[link[0]] = self
                     break
+        lock.release()
 
     def get_elo(self):
         return self.elo
