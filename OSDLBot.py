@@ -255,4 +255,4 @@ async def getLastImg(chan):
             return message.attachments[0].url
     return None
 
-client.run(OSDLBot_storage.TOKEN)
+client.run(os.environ.get('TOKEN'))

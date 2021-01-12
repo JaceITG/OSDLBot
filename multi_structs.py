@@ -1,7 +1,7 @@
 from osuapi import OsuApi, ReqConnector, enums
 import aiohttp, asyncio, sys, os, datetime, pprint, shelve
 import OSDLBot_storage
-api = OsuApi(OSDLBot_storage.OSU_API_KEY, connector=ReqConnector())
+api = OsuApi(os.environ.get('OSU_API_KEY'), connector=ReqConnector())
 
 class MatchNotFoundError(Exception):
     pass

@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import OSDLBot_storage
 from multi_structs import Map, Game, Match, MatchNotFoundError, Player, PlayerNotFound
-api = OsuApi(OSDLBot_storage.OSU_API_KEY, connector=ReqConnector())
+api = OsuApi(os.environ.get('OSU_API_KEY'), connector=ReqConnector())
 
 class UserNotFoundError(Exception):
     pass
