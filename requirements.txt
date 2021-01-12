@@ -97,7 +97,6 @@ pyrsistent==0.15.7
 PySocks==1.7.1
 python-dateutil==2.8.1
 PyWavelets==1.1.1
-pywin32==227
 pywinpty==0.5.7
 pyzmq==18.1.1
 qtconsole==4.6.0
@@ -108,7 +107,6 @@ rsa==4.0
 sacremoses==0.0.43
 scikit-image==0.17.2
 scipy==1.4.1
-seam-carver==0.1.2
 selenium==3.141.0
 Send2Trash==1.5.0
 sentencepiece==0.1.91
@@ -127,12 +125,10 @@ tornado==6.0.3
 tqdm==4.48.2
 traitlets==4.3.3
 transformers==3.0.2
-tweepy==3.8.0
 txaio==20.1.1
 typed-ast==1.4.2
 update-checker==0.16
 urllib3==1.25.6
-vpython==7.6.0
 wcwidth==0.1.8
 webencodings==0.5.1
 websocket-client==0.57.0
