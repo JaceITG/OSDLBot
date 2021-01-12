@@ -8,4 +8,4 @@ OSDL_matches.txt
 *.json
 Data/calculated.txt
 test.py
-requirements_pip.txt
+requirements_new.txt
