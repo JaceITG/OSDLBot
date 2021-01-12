@@ -128,15 +128,14 @@ async def link_account(osu_user,discord_id):
 
 #Returns the player model associated with a Discord ID
 async def get_linked(discord_id):
-    try:
-        with shelve.open("userdb") as db:
-            player = db[str(discord_id)]
-            #Update the Player object and restore in database
-            player.update()
-            db[str(discord_id)] = player
-        return player
-    except:
-        return None
+    with shelve.open("userdb") as db:
+        if str(discord_id) not in db.keys():
+            return None
+        player = db[str(discord_id)]
+        #Update the Player object and restore in database
+        player.update()
+        db[str(discord_id)] = player
+    return player
 
 #Returns an embed containing information about the Player linked to a discord id
 async def get_linked_embed(discord_id, pfp_url=""):
