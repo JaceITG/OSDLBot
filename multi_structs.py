@@ -145,7 +145,7 @@ class Player():
 
             self.discord_id = discord
             self.username = self.obj.username
-            self.elo = 0
+            self.elo = 1000
             
             #Osu info
             self.id = self.obj.user_id
