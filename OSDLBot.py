@@ -86,13 +86,24 @@ async def prefixed(message):
         await sendEmbed(discord.Embed(description=f"Discord user {author.name} linked to {player_obj.username}"), channel)
 
     if args[0] == "osu":
-        if len(message.mentions)>0:
-            #Get the linked account of user mentioned in command
-            fetching = message.mentions[0]
-        else:
-            #Get author's lined account
-            fetching = author
-        emb = await get_linked_embed(fetching.id, fetching.avatar_url)
+        try:
+            if len(message.mentions)>0:
+                #Get the linked account of user mentioned in command
+                fetching = message.mentions[0]
+                emb = await get_linked_embed(discord_id=fetching.id, pfp_url=fetching.avatar_url)
+            elif len(args)>1:
+                passed = ' '.join(args[1:])
+                if "osu.ppy.sh" in passed:
+                    #profile link was passed
+                    passed = passed.split("/")[-1]
+                elif not passed.isdigit():
+                    #Convert osu username to int id
+                    passed = await get_osu_user_id(passed)
+                emb = await get_linked_embed(osu_user=int(passed))
+            else:
+                emb = await get_linked_embed(discord_id=author.id, pfp_url=author.avatar_url)
+        except PlayerNotFound:
+            emb = discord.Embed(description="Could not find this user!")
         await sendEmbed(emb, channel)
 
     if args[0] == "match":

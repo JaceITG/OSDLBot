@@ -137,10 +137,12 @@ async def get_linked(discord_id):
     player.update()
     return player
 
-#Returns an embed containing information about the Player linked to a discord id
-async def get_linked_embed(discord_id, pfp_url=""):
-    
-    player = await get_linked(discord_id)
+#Returns an embed containing information about the Player linked to a discord or osu id
+async def get_linked_embed(discord_id=0,osu_user=0, pfp_url=""):
+    if discord_id>0:
+        player = await get_linked(discord_id)
+    elif osu_user>0:
+        player = await find_osu_player(osu_user)
 
     if player is None:
         return discord.Embed(description="Could not find a linked account for this user! Use `%link [username]` to link an osu! account to Discord.")
@@ -155,6 +157,8 @@ async def get_linked_embed(discord_id, pfp_url=""):
 
     if len(pfp_url)>0:
         player_embed.set_thumbnail(url=pfp_url)
+    else:
+        player_embed.set_thumbnail(url=OSDLBot_storage.LOGO_URL)
     return player_embed
 
 async def reset_link(discord_id, osu_user_id=0, breaking=False):
@@ -167,6 +171,12 @@ async def reset_link(discord_id, osu_user_id=0, breaking=False):
     
     plr = await link_account(osu_user_id,discord_id)
     return plr
+
+async def get_osu_user_id(username):
+    try:
+        return await api.get_user(username)[0].user_id
+    except:
+        raise PlayerNotFound()
 
 async def elo_formula(win_ratio, old_elo, op_old_elo):
     c = OSDLBot_storage.C_VALUE
