@@ -157,10 +157,13 @@ async def get_linked_embed(discord_id, pfp_url=""):
         player_embed.set_thumbnail(url=pfp_url)
     return player_embed
 
-async def reset_link(discord_id, osu_user_id):
+async def reset_link(discord_id, osu_user_id=0, breaking=False):
     with shelve.open("userdb") as db:
         if str(discord_id) in db.keys():
             del db[str(discord_id)]
+    
+    if breaking:
+        return None
     
     plr = await link_account(osu_user_id,discord_id)
     return plr

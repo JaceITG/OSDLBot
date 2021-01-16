@@ -193,6 +193,10 @@ async def adminCmd(message):
         else:
             elo_g = await elo_graph()
         await sendFile(elo_g,channel,cntnt=f"***Current ELO graph***\n`Weight = {OSDLBot_storage.ELO_WEIGHT}\nc = {OSDLBot_storage.C_VALUE}`")
+    
+    if cmd[0]=='unlink':
+        to_unlink = cmd[1]
+        await reset_link(to_unlink,breaking=True)
 
 
     if cmd[0]=='dm':
