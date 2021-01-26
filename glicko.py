@@ -10,7 +10,7 @@ EPSILON = 0.000001
 LOGISTIC = math.log(10) / 400
 
 class Rating(object):
-     def __init__(self, mu=MU, phi=PHI, sigma=SIGMA):
+    def __init__(self, mu=MU, phi=PHI, sigma=SIGMA):
         self.mu = mu
         self.phi = phi
         self.sigma = sigma
