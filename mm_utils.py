@@ -4,7 +4,7 @@ import aiohttp, asyncio, sys, os, datetime, pprint, discord, shelve, math
 import numpy as np
 import matplotlib.pyplot as plt
 import OSDLBot_storage
-import glicko
+from glicko import Glicko2
 from multi_structs import Map, Game, Match, MatchNotFoundError, Player, PlayerNotFound
 from dotenv import load_dotenv
 load_dotenv()
