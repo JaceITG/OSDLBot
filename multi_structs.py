@@ -2,6 +2,8 @@ from osuapi import OsuApi, ReqConnector, enums
 import aiohttp, asyncio, sys, os, datetime, pprint, shelve
 from threading import Lock
 import OSDLBot_storage
+from dotenv import load_dotenv
+load_dotenv()
 api = OsuApi(os.environ.get('OSU_API_KEY'), connector=ReqConnector())
 lock = Lock()
 class MatchNotFoundError(Exception):

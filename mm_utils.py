@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import OSDLBot_storage
 import glicko
 from multi_structs import Map, Game, Match, MatchNotFoundError, Player, PlayerNotFound
+from dotenv import load_dotenv
+load_dotenv()
 api = OsuApi(os.environ.get('OSU_API_KEY'), connector=ReqConnector())
 
 class UserNotFoundError(Exception):
