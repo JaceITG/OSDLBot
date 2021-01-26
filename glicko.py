@@ -1,3 +1,4 @@
+import math
 WIN = 1
 DRAW = 0.5
 LOSS = 0
@@ -25,7 +26,7 @@ class Glicko2(object):
         self.phi = phi
         self.sigma = sigma
         self.tau = tau
-        self.epsioln = epsilon
+        self.epsilon = epsilon
     def create_rating(self, mu=None, phi=None, sigma=None):
         if mu is None:
             mu = self.mu
@@ -42,7 +43,7 @@ class Glicko2(object):
         mu = (rating.mu - self.mu) / ratio
         phi = rating.phi / ratio
         return self.create_rating(mu, phi, rating.sigma)
-    def reduce_impact(self, rating)
+    def reduce_impact(self, rating):
         return 1 / math.sqrt(1 + (3* rating.phi ** 2) / (math.pi ** 2))
     def expect_score(self, rating, other_rating, impact):
         return 1. / (1 + math.exp(-impact * (rating.mu - other_rating.mu)))
