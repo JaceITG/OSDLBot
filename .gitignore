@@ -9,3 +9,4 @@ OSDL_matches.txt
 Data/calculated.txt
 test.py
 requirements_new.txt
+.env

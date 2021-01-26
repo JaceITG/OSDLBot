@@ -6,9 +6,11 @@ from datetime import datetime
 from log_matches import log
 from mm_utils import *
 from multi_structs import *
+from dotenv import load_dotenv
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
+load_dotenv()
 
 #On bot startup/ready
 @client.event
