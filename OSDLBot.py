@@ -122,12 +122,16 @@ async def prefixed(message):
         await sendEmbed(response,channel)
     
     if args[0] == "leaderboard" or args[0] == "lb":
+        show_elo = True
+        if "-r" in args:
+            args.remove("-r")
+            show_elo = False
         if len(args)>1 and args[1].isdigit():
             #Page was passed
-            lb = await leaderboard(author.id,page=int(args[1]))
+            lb = await leaderboard(author.id,elo_based=show_elo,page=int(args[1]))
         else:
             #Get first page
-            lb = await leaderboard(author.id)
+            lb = await leaderboard(author.id,elo_based=show_elo)
         await sendEmbed(lb,channel)
 
 

@@ -33,13 +33,16 @@ async def set_elo_by_discord(discord_id, elo):
         db[str(discord_id)] = player
 
 #Generate a leaderboard embed using the OSDL ELO rankings
-async def leaderboard(author_id, page=1, length=10):
+async def leaderboard(author_id, elo_based=True, page=1, length=10):
     with shelve.open("userdb") as db:
         #Create a list of player objs stored in the dict
         players = [db[id] for id in db.keys()]
     
     #Sort by elo
-    players.sort(key=lambda p: p.elo, reverse=True)
+    if elo_based:
+        players.sort(key=lambda p: p.elo, reverse=True)
+    else:
+        players.sort(key=lambda p: p.rank, reverse=False)
 
     if len(players)%length == 0:
         #edge cases (i.e. numplayers 20 length 10, we need 2 pages not 3)
@@ -63,12 +66,18 @@ async def leaderboard(author_id, page=1, length=10):
         #Add listing to desc for each player
         ply = players[p]
         ply.update()
-        desc+= f"{p+1:<4}➤   # {ply.username:<15} ELO: {round(ply.elo)}\n"
+        if elo_based:
+            desc+= f"{p+1:<4}➤   # {ply.username:<15} ELO: {round(ply.elo)}\n"
+        else:
+            desc+= f"{p+1:<4}➤   # {ply.username:<15} Rank: {round(ply.rank)}\n"
     desc+="____________________________________\n"
     
     #If author is a Player, show their rank in footer
     if author_model:
-        desc+=f"Your Rank: {await get_rank(author_model.id,sorted=players):<15} ELO: {round(author_model.elo)}"
+        if elo_based:
+            desc+=f"Your Rank: {await get_rank(author_model.id,sorted=players):<15} ELO: {round(author_model.elo)}"
+        else:
+            desc+=f"Your Rank: {await get_rank(author_model.id,sorted=players):<15} Rank: {author_model.rank}"
 
     #Instatiate Embed
     emb = discord.Embed(title="OSDL 1v1 Leaderboard",description=f"```{desc}```")
