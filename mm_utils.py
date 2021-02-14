@@ -21,20 +21,20 @@ class AlreadyCalcError(Exception):
 
 
 async def add_elo_by_discord(discord_id, elo_delta):
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         player = await get_linked(discord_id)
         player.add_elo(elo_delta)
         db[str(discord_id)] = player
 
 async def set_elo_by_discord(discord_id, elo):
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         player = await get_linked(discord_id)
         player.set_elo(elo)
         db[str(discord_id)] = player
 
 #Generate a leaderboard embed using the OSDL ELO rankings
 async def leaderboard(author_id, elo_based=True, page=1, length=10):
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         #Create a list of player objs stored in the dict
         players = [db[id] for id in db.keys()]
     
@@ -88,7 +88,7 @@ async def leaderboard(author_id, elo_based=True, page=1, length=10):
     
 async def get_rank(osu_id, sorted=None):
     if not sorted:
-        with shelve.open("userdb") as db:
+        with shelve.open(f"{MAIN_DIR}\\userdb") as db:
             #Create a list of player objs stored in the dict
             players = [db[id] for id in db.keys()]
         players.sort(key=lambda p: p.elo)
@@ -101,7 +101,7 @@ async def get_rank(osu_id, sorted=None):
 
 #Return the Player object stored in the dictionary with the given ID, or None if not found
 async def find_osu_player(osu_user_id):
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         #Create a list of player objs stored in the dict
         players = [db[id] for id in db.keys()]
     
@@ -114,7 +114,7 @@ async def find_osu_player(osu_user_id):
 #Stores in userdb shelve dictionary
 async def link_account(osu_user,discord_id):
     #Don't allow user to overwrite if account already linked
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         if str(discord_id) in db.keys():
             raise AlreadyLinkedError()
 
@@ -134,13 +134,13 @@ async def link_account(osu_user,discord_id):
         player = Player(user.user_id,discord_id, new=True)
 
     #Store object in a db dict of discord_id:Player
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         db[str(discord_id)] = player
     return player
 
 #Returns the player model associated with a Discord ID
 async def get_linked(discord_id):
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         if str(discord_id) not in db.keys():
             return None
         player = db[str(discord_id)]
@@ -174,7 +174,7 @@ async def get_linked_embed(discord_id=0,osu_user=0, pfp_url=""):
     return player_embed
 
 async def reset_link(discord_id, osu_user_id=0, breaking=False):
-    with shelve.open("userdb") as db:
+    with shelve.open(f"{MAIN_DIR}\\userdb") as db:
         if str(discord_id) in db.keys():
             del db[str(discord_id)]
     

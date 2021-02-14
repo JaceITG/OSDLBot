@@ -5,6 +5,7 @@ ADMIN_ID = [537091937271021580, 411280275633340416]
 MAIN_CHAT_ID = 777670580861665333
 MATCH_RESULT_CHAN = 785187900772843520
 DATA_DIR = "C:\\Users\\Jace\\Desktop\\OSDLBot\\Data"
+MAIN_DIR = "C:\\Users\\Jace\\Desktop\\OSDLBot"
 multi_url_format = "https://osu.ppy.sh/community/matches/"
 LOGO_URL = "https://i.imgur.com/BnrMcNG.jpg"
 
