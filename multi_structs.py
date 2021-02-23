@@ -28,13 +28,15 @@ class Game():
         self.player_scores = {}
         self.players = []
         for teamscore in game_api.scores:
-            #FIXME: adjust mod multipliers??
-            
+
             p = find_osu_player(teamscore.user_id)
             if p is None:
                 raise PlayerNotFound()
             ##print(f"Mods for {p.username}: {teamscore.enabled_mods}")
             self.players.append(p)
+            #FIXME: adjust mod multipliers before adding to player_scores
+            #on freemod rounds...
+            #nomod multiplied by 0.8, ez by 1.75
             self.player_scores[p] = teamscore.score
 
         #Store data about which mods players used
@@ -67,7 +69,7 @@ class Match():
         self.match = self.json.match
         self.title = self.match.name
         self.time_played = self.match.start_time
-        
+
         #Games
         self.round_list = [Game(g) for g in self.json.games]
         self.players = []#li of player ids who participated
@@ -104,7 +106,7 @@ class Match():
             #Invalid if map not in pool or game doesn't match scorev2 req
             if not game.in_pool(pool) or game.is_v2 != scorev2:
                 return False
-        
+
         #check win margin
         wins = self.calc_round_wins()
         needed_for_win = (pool['BO']//2)+1
@@ -131,7 +133,7 @@ def find_osu_player(osu_user_id):
     with shelve.open("userdb") as db:
         #Create a list of player objs stored in the dict
         players = [db[id] for id in db.keys()]
-    
+
     for player in players:
         if osu_user_id == player.id:
             return player
@@ -148,7 +150,7 @@ class Player():
             self.discord_id = discord
             self.username = self.obj.username
             self.elo = 1000
-            
+
             #Osu info
             self.id = self.obj.user_id
             self.rank = self.obj.pp_rank
@@ -173,16 +175,16 @@ class Player():
 
     def get_elo(self):
         return self.elo
-    
+
     def set_elo(self, new_elo):
         self.elo = new_elo
         self.write()
-    
+
     def add_elo(self, elo_delta):
         self.elo += elo_delta
         self.write()
         return self.elo
-    
+
     def update(self):
         self.obj = api.get_user(self.id)[0]
         self.username = self.obj.username
@@ -198,4 +200,3 @@ class Player():
 
 def resolve_username(id):
     return api.get_user(id)[0].username
-
